@@ -8,10 +8,11 @@ class Heatmap
 
   def initialize(dataset_name, distribution, columns)
 
-    @no_colorgrades = 64
     @columns = columns
 
+    @keysorted = distribution.sort_by{|k, v| k}
     @valuesorted = distribution.sort_by{|k, v| v}
+    @no_colorgrades = @keysorted.length
 
     puts '\documentclass{beamer} % start of preamble'
     puts '\usepackage{xcolor,colortbl}'
@@ -19,19 +20,34 @@ class Heatmap
     puts '\colorlet{color min hsb}[hsb]{red}'
     puts '\colorlet{color max hsb}[hsb]{magenta}'
 
-    puts "\\begin{frame}{Distribution of codons in #{dataset_name} % header of the slide"
+    puts "\\begin{frame}{Distribution of codons in #{dataset_name}} % header of the slide"
 
-    0.upto(no_colorgrades - 1) { |i|
+    0.upto(@no_colorgrades - 1) { |i|
 
-      factor = i * 100 / (no_colorgrades - 1)
-      puts "\\colorlet{color hsb#{i}}{color max hsb!#{factor}!color min hsb}"
+      factor = i.to_f * 100 / (@no_colorgrades - 1)
+      puts "\\colorlet{color hsb#{i}}{color max hsb!#{factor.round(2)}!color min hsb}"
     }
 
     puts '\begin{center}'
     puts '\begin{tabular}{*{4}{c}}'
 
-    print "... here comes the table contents, row by row separated by \\\\
-and with column values separated by & ..."
+    # here comes the table contents, row by row separated by \\
+    # and with column values separated by &
+   @keysorted.each_index { |i|
+     colorindex = 0
+     @valuesorted.each_index { |j|
+       if @valuesorted[j][0] == @keysorted[i][0]
+         colorindex = j
+       end
+     }
+     print "\\cellcolor{color hsb#{colorindex}}\\texttt{#{@keysorted[i][0]}}{\\tiny #{@keysorted[i][1]}}"
+
+     if ((i % @columns) == (@columns - 1) || i == @keysorted.length - 1)
+       puts '\\\\' # needs to be escaped, because concatenated in line with the print command above?
+     else
+       print '&'
+     end
+   }
 
     puts '\end{tabular}'
     puts '\end{center}'
@@ -44,13 +60,22 @@ end
 
 #
 
+def get_sequence(filename)
+  sequence_string = ''
+  fi = FastaIterator.new(filename)
+  fi.each() {|header,seq|
+    sequence_string = seq
+  }
+  return sequence_string
+end
+
 def get_orf_distribution(sequence)
 
   distribution = {}
 
   # non-greedy match, write that into list, then continue matching
   # from last starting position +3 until the end
-  while match = sequence.match(/([atgc]{3})/)
+  while match = sequence.match(/([ATGC]{3})/)
     index = match[0]
     if !distribution.has_key?(index)
       distribution[index] = 0
@@ -58,7 +83,7 @@ def get_orf_distribution(sequence)
 
     distribution[index] += 1
 
-    seq = seq.slice(match.begin(0)+3..-1)
+    sequence = sequence.slice(match.begin(0)+3..-1)
   end
 
   return distribution
@@ -75,10 +100,8 @@ end
 
 filename = ARGV[0]
 
-fi = FastaIterator.new(filename)
-fi.each() {|header,seq|
-  sequence_string = seq.join
-}
+sequence_string = get_sequence(filename)
+
 distribution = get_orf_distribution(sequence_string)
 
 heatmap = Heatmap.new(filename, distribution, no_columns)
