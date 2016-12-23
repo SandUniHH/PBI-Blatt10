@@ -1,24 +1,27 @@
-// Bocher Diedrich Sandmeier
+/* Bocher Diedrich Sandmeier
+ *
+ * Note: Does not check the result for integer overflows.
+ */
 
 #include <stdlib.h>
 #include <stdio.h>
 
 /* Returns the user input, an integer */
-static int number_input()
+int number_input()
 {
   int input;
   
   if(scanf("%d",&input) != 1 || input <= 0) 
   {
     fprintf(stderr,"Wrong input!\n");
-    return EXIT_FAILURE;
+    exit(EXIT_FAILURE);
   }
   
   return(input);
 }
 
 /* Calculate the exponential using the two numbers the user has put in */
-static int calculate_exponential(base, exponent)
+int calculate_exponential(int base, int exponent)
 {
   int i, result = base;
   
@@ -42,5 +45,5 @@ int main ()
   
   printf("The result is: %d\n", result);
   
-  return(EXIT_SUCCESS);
+  exit(EXIT_SUCCESS);
 }
