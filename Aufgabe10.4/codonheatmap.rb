@@ -42,8 +42,8 @@ class Heatmap
      }
      print "\\cellcolor{color hsb#{colorindex}}\\texttt{#{@keysorted[i][0]}}{\\tiny #{@keysorted[i][1]}}"
 
-     if ((i % @columns) == (@columns - 1) || i == @keysorted.length - 1)
-       puts '\\\\' # needs to be escaped, because concatenated in line with the print command above?
+     if (i % @columns) == (@columns - 1) || i == @keysorted.length - 1
+       puts '\\\\' # needs to be escaped, because apparently concatenated in line with the print command above
      else
        print '&'
      end
@@ -73,9 +73,9 @@ def get_orf_distribution(sequence)
 
   distribution = {}
 
-  # non-greedy match, write that into list, then continue matching
-  # from last starting position +3 until the end
-  while match = sequence.match(/([ATGC]{3})/)
+  # match, write that into hash, then continue matching
+  # from last starting position +1 until the end
+  while match = sequence.match(/^([ATGC]{3})/)
     index = match[0]
     if !distribution.has_key?(index)
       distribution[index] = 0
@@ -83,7 +83,7 @@ def get_orf_distribution(sequence)
 
     distribution[index] += 1
 
-    sequence = sequence.slice(match.begin(0)+3..-1)
+    sequence = sequence.slice(match.begin(0)+1..-1)
   end
 
   return distribution
